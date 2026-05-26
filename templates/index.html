@@ -6,7 +6,6 @@
     <title>Welcome Portal</title>
     <style>
         /* Embedded CSS styling for immediate functionality */
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #7c5e55;
@@ -104,7 +103,7 @@
             <p>Please choose an option to continue to your dashboard.</p>
             <div class="btn-group">
                 <button class="btn-primary" onclick="showRegister()">Register</button>
-                <button class="btn-secondary" onclick="showUploadPage()">Login</button>
+                <button class="btn-secondary" onclick="showLoginState()">Login</button>
             </div>
         </div>
 
@@ -165,6 +164,15 @@
     </main>
 
     <script>
+        // ========================================================
+        // ENVIRONMENT ROUTE CONFIGURATION
+        // ========================================================
+        // Localhost fallback route verification option:
+        // const API_BASE_URL = 'http://127.0.0.1:5000';
+        
+        // Paste your live Render Web Service dashboard link below:
+        const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
+
         // Track the current logged-in state
         let isLoggedIn = false;
         // Global tracker to save the validated database ID for file uploads
@@ -188,15 +196,6 @@
             registerCard.classList.remove('hidden');
         }
 
-        function showUploadPage() {
-            welcomeCard.classList.add('hidden');
-            uploadCard.classList.remove('hidden');
-            // Ensure form views reset correctly if logged out previously
-            if (!isLoggedIn) {
-                showLoginState();
-            }
-        }
-
         function goBack() {
             registerCard.classList.add('hidden');
             uploadCard.classList.add('hidden');
@@ -207,6 +206,10 @@
         function showLoginState() {
             isLoggedIn = false;
             currentUserId = null; // Clear session index on log out
+            
+            welcomeCard.classList.add('hidden');
+            uploadCard.classList.remove('hidden');
+            
             portalTitle.innerText = "Portal Login";
             portalInstructions.innerText = "Please enter your login details below to access your receipts.";
             loginForm.classList.remove('hidden');
@@ -225,11 +228,11 @@
 
         function goBackOrLogout() {
             if (isLoggedIn) {
-                // If logged in, clicking the back button serves as a logout sequence
                 alert("Logging out...");
                 showLoginState();
+            } else {
+                goBack();
             }
-            goBack();
         }
 
         // ========================================================
@@ -248,7 +251,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/register', {
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, phone, dob, password })
@@ -257,7 +260,6 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Flask returns the auto-generated database SERIAL user id
                     alert(`Registration Successful!\nWelcome aboard, ${name}.\n\n⚠️ IMPORTANT: Your User ID number is: ${data.user_id}\nUse this number to log in.`);
                     event.target.reset();
                     goBack();
@@ -266,7 +268,7 @@
                 }
             } catch (error) {
                 console.error("Connection Error:", error);
-                alert("Could not connect to the backend server. Verify your Flask app is running on port 5000.");
+                alert("Could not connect to the backend server. Verify your API server network deployment configuration.");
             }
         }
 
@@ -278,7 +280,7 @@
             const password = document.getElementById('loginPassword').value; 
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/login', {
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userNumber, password })
@@ -322,7 +324,7 @@
             formData.append('user_id', currentUserId);
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/upload', {
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
                     method: 'POST',
                     body: formData // Note: Browser handles headers automatically when parsing FormData
                 });

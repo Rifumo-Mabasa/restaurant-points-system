@@ -1,30 +1,37 @@
+import os
 import psycopg2
 
 print("--- Script Started ---")
 
-# 1. DOUBLE CHECK THESE DETAILS MATCH YOUR POSTGRES SYSTEM
-DB_SETTINGS = {
-    "host": "localhost",
-    "database": "receipt_portal_db",  # <-- Change to your actual database name
-    "user": "postgres",                # <-- Change to your actual database user
-    "password": "1234"  # <-- Change to your actual database password
-}
+# Pull the cloud database URL if it exists, otherwise fall back to local settings
+db_url = os.environ.get("DATABASE_URL")
 
 try:
-    print(f"Attempting to connect to database '{DB_SETTINGS['database']}'...")
-    conn = psycopg2.connect(**DB_SETTINGS)
+    if db_url:
+        print("Attempting to connect to Render Cloud Database...")
+        conn = psycopg2.connect(db_url)
+    else:
+        print("No DATABASE_URL found. Falling back to localhost...")
+        conn = psycopg2.connect(
+            host="localhost",
+            database="receipt_portal_db",
+            user="postgres",
+            password="1234"
+        )
+        
     cur = conn.cursor()
     print("Connected successfully!")
 
-    # SQL commands
+    # SQL commands (Matching your app.py schema perfectly)
     users_table = """
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(100),
-        email VARCHAR(100) UNIQUE NOT NULL,
-        phone VARCHAR(20),
-        dob DATE,
-        password_hash VARCHAR(255) NOT NULL
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        dob DATE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
     
@@ -44,7 +51,7 @@ try:
     cur.execute(uploads_table)
 
     conn.commit()
-    print("--- Success! All tables are ready. ---")
+    print("--- Success! All tables are ready and synchronized. ---")
 
 except Exception as e:
     print("\n[ERROR] Database setup failed!")
