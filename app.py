@@ -1,14 +1,17 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+# 1. Initialize the Flask App Engine FIRST
 app = Flask(__name__)
-# Allows your HTML frontend to communicate across local server ports
+
+# Allows your HTML frontend to communicate across local server ports or live domains
 CORS(app) 
 
+# 2. Configuration Settings
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -16,13 +19,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Create the uploads folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Helper function to check allowed file extensions
+
+# 3. Helper Functions
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Database Connection Helper Function
 def get_db_connection():
     # Production Check: Most cloud hosts provide a single 'DATABASE_URL' string
     db_url = os.environ.get("DATABASE_URL")
@@ -38,6 +41,16 @@ def get_db_connection():
             user=os.environ.get("DB_USER", "postgres"),
             password=os.environ.get("DB_PASSWORD", "1234")
         )
+
+
+# ==============================================================================
+# 4. APPLICATION ROUTES
+# ==============================================================================
+
+@app.route('/')
+def home():
+    # Looks inside your 'templates' folder for index.html
+    return render_template('index.html')
 
 
 @app.route('/api/register', methods=['POST'])
