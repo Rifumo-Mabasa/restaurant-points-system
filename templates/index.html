@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Portal</title>
+    <style>
+        /* Embedded CSS styling for immediate functionality */
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #7c5e55;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: url("/static/first-image.png");
+            background-size: cover;
+            background-position: center;
+        }
+        main {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+        }
+        .title {
+            text-align: center;
+            color: #f0eaea;
+            margin-bottom: 24px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .card {
+            background: #fc8b8b;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background-color: #004085;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #3af553;
+        }
+        .btn-secondary {
+            background-color: #004085;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #3af553;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #0056b3;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1 class="title">Welcome to the Document Portal</h1>
+
+        <div id="welcomeCard" class="card">
+            <h2>Welcome!</h2>
+            <p>Please choose an option to continue to your dashboard.</p>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="showRegister()">Register</button>
+                <button class="btn-secondary" onclick="showUploadPage()">Login</button>
+            </div>
+        </div>
+
+        <div id="registerCard" class="card hidden">
+            <h2>Create Account</h2>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="123-456-7890">
+                </div>
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob" name="dob" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Create Password</label>
+                    <input type="password" id="password" name="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary">Submit Registration</button>
+            </form>
+            <span class="back-link" onclick="goBack()">← Back to Welcome</span>
+        </div>
+
+        <div id="uploadCard" class="card hidden">
+            <h2 id="portalTitle">Portal Login</h2>
+            <p id="portalInstructions">Please enter your login details below to access your receipts.</p>
+            
+            <form id="loginForm" onsubmit="handlePortalLogin(event)">
+                <div class="form-group">
+                    <label for="userNumber">User Number</label>
+                    <input type="text" id="userNumber" name="userNumber" required placeholder="e.g., 123456">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" placeholder="Enter password" required />
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+
+            <form id="receiptUploadForm" class="hidden" onsubmit="handleUpload(event)">
+                <div class="form-group">
+                    <label for="fileUpload">Select Receipt (Image or PDF)</label>
+                    <input type="file" id="fileUpload" name="file" accept="image/*,.pdf" required>
+                </div>
+                <button type="submit" class="btn-secondary">Upload Receipt</button>
+            </form>
+            
+            <span id="backActionLink" class="back-link" onclick="goBackOrLogout()">← Back to Welcome</span>
+        </div>
+    </main>
+
+    <script>
+        // Track the current logged-in state
+        let isLoggedIn = false;
+        // Global tracker to save the validated database ID for file uploads
+        let currentUserId = null;
+
+        // Elements mapping
+        const welcomeCard = document.getElementById('welcomeCard');
+        const registerCard = document.getElementById('registerCard');
+        const uploadCard = document.getElementById('uploadCard');
+        
+        const loginForm = document.getElementById('loginForm');
+        const receiptUploadForm = document.getElementById('receiptUploadForm');
+        
+        const portalTitle = document.getElementById('portalTitle');
+        const portalInstructions = document.getElementById('portalInstructions');
+        const backActionLink = document.getElementById('backActionLink');
+
+        // Navigation functions
+        function showRegister() {
+            welcomeCard.classList.add('hidden');
+            registerCard.classList.remove('hidden');
+        }
+
+        function showUploadPage() {
+            welcomeCard.classList.add('hidden');
+            uploadCard.classList.remove('hidden');
+            // Ensure form views reset correctly if logged out previously
+            if (!isLoggedIn) {
+                showLoginState();
+            }
+        }
+
+        function goBack() {
+            registerCard.classList.add('hidden');
+            uploadCard.classList.add('hidden');
+            welcomeCard.classList.remove('hidden');
+        }
+
+        // Logic helper to switch between login and upload view state
+        function showLoginState() {
+            isLoggedIn = false;
+            currentUserId = null; // Clear session index on log out
+            portalTitle.innerText = "Portal Login";
+            portalInstructions.innerText = "Please enter your login details below to access your receipts.";
+            loginForm.classList.remove('hidden');
+            receiptUploadForm.classList.add('hidden');
+            backActionLink.innerText = "← Back to Welcome";
+        }
+
+        function showUploadState() {
+            isLoggedIn = true;
+            portalTitle.innerText = "Receipt Dashboard";
+            portalInstructions.innerText = "Your account is validated. Choose an image or PDF to send your receipt.";
+            loginForm.classList.add('hidden');
+            receiptUploadForm.classList.remove('hidden');
+            backActionLink.innerText = "← Logout & Go Back";
+        }
+
+        function goBackOrLogout() {
+            if (isLoggedIn) {
+                // If logged in, clicking the back button serves as a logout sequence
+                alert("Logging out...");
+                showLoginState();
+            }
+            goBack();
+        }
+
+        // ========================================================
+        // LIVE FORM SUBMISSION HANDLERS (Connected to Flask API)
+        // ========================================================
+
+        // 1. Live Registration Handler
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            // Extract all form values
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const dob = document.getElementById('dob').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, dob, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Flask returns the auto-generated database SERIAL user id
+                    alert(`Registration Successful!\nWelcome aboard, ${name}.\n\n⚠️ IMPORTANT: Your User ID number is: ${data.user_id}\nUse this number to log in.`);
+                    event.target.reset();
+                    goBack();
+                } else {
+                    alert(`Registration Failed: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Connection Error:", error);
+                alert("Could not connect to the backend server. Verify your Flask app is running on port 5000.");
+            }
+        }
+
+        // 2. Live Login Authentication Handler
+        async function handlePortalLogin(event) {
+            event.preventDefault();
+            
+            const userNumber = document.getElementById('userNumber').value;
+            const password = document.getElementById('loginPassword').value; 
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userNumber, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Logged in successfully!`);
+                    currentUserId = data.user_id; // Capture user ID for the file upload sequence
+                    event.target.reset();
+                    showUploadState();
+                } else {
+                    alert(`Login Failed: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Connection Error:", error);
+                alert("Network connectivity error during login confirmation.");
+            }
+        }
+
+        // 3. Live File Upload Tracking Handler
+        async function handleUpload(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileUpload');
+            
+            if (fileInput.files.length === 0) {
+                alert("Please select a valid file to upload.");
+                return;
+            }
+
+            if (!currentUserId) {
+                alert("Session context missing. Please re-authenticate your user ID.");
+                showLoginState();
+                return;
+            }
+
+            // Multipart file uploads require standard FormData packaging instead of JSON strings
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('user_id', currentUserId);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/upload', {
+                    method: 'POST',
+                    body: formData // Note: Browser handles headers automatically when parsing FormData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Success! "${fileInput.files[0].name}" has been successfully uploaded and linked.`);
+                    event.target.reset();
+                } else {
+                    alert(`Upload Failed: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Connection Error:", error);
+                alert("Network connection drop timed out during file transfer submission.");
+            }
+        }
+    </script>
+</body>
+</html>
