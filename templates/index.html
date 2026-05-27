@@ -192,275 +192,144 @@
 </div>
     </main>
 
-    <script>
-        // ========================================================
-        // ENVIRONMENT ROUTE CONFIGURATION
-        // ========================================================
-        // Localhost fallback route verification option:
-        // const API_BASE_URL = 'http://127.0.0.1:5000';
-        
-        // Paste your live Render Web Service dashboard link below:
-        const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
+ <script>
+    // ========================================================
+    // CONFIGURATION
+    // ========================================================
+    const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
+    let isLoggedIn = false;
+    let currentUserId = null;
 
-        // Track the current logged-in state
-        let isLoggedIn = false;
-        // Global tracker to save the validated database ID for file uploads
-        let currentUserId = null;
+    // Elements mapping
+    const welcomeCard = document.getElementById('welcomeCard');
+    const registerCard = document.getElementById('registerCard');
+    const uploadCard = document.getElementById('uploadCard');
+    const dashboardCard = document.getElementById('dashboardCard');
+    const navBar = document.getElementById('navBar');
+    const loginForm = document.getElementById('loginForm');
+    const receiptUploadForm = document.getElementById('receiptUploadForm');
+    const portalTitle = document.getElementById('portalTitle');
+    const portalInstructions = document.getElementById('portalInstructions');
+    const backActionLink = document.getElementById('backActionLink');
 
-        // Elements mapping
-        const welcomeCard = document.getElementById('welcomeCard');
-        const registerCard = document.getElementById('registerCard');
-        const uploadCard = document.getElementById('uploadCard');
-        
-        const loginForm = document.getElementById('loginForm');
-        const receiptUploadForm = document.getElementById('receiptUploadForm');
-        
-        const portalTitle = document.getElementById('portalTitle');
-        const portalInstructions = document.getElementById('portalInstructions');
-        const backActionLink = document.getElementById('backActionLink');
-
-        // Navigation functions
-        function showRegister() {
-            welcomeCard.classList.add('hidden');
-            registerCard.classList.remove('hidden');
-        }
-
-        function goBack() {
-            registerCard.classList.add('hidden');
-            uploadCard.classList.add('hidden');
-            welcomeCard.classList.remove('hidden');
-        }
-
-        // Logic helper to switch between login and upload view state
-        function showLoginState() {
-            isLoggedIn = false;
-            currentUserId = null; // Clear session index on log out
-            
-            welcomeCard.classList.add('hidden');
-            uploadCard.classList.remove('hidden');
-            
-            portalTitle.innerText = "Portal Login";
-            portalInstructions.innerText = "Please enter your login details below to access your receipts.";
-            loginForm.classList.remove('hidden');
-            receiptUploadForm.classList.add('hidden');
-            backActionLink.innerText = "← Back to Welcome";
-        }
-
-        function showUploadState() {
-            isLoggedIn = true;
-            portalTitle.innerText = "Receipt Dashboard";
-            portalInstructions.innerText = "Your account is validated. Choose an image or PDF to send your receipt.";
-            loginForm.classList.add('hidden');
-            receiptUploadForm.classList.remove('hidden');
-            backActionLink.innerText = "← Logout & Go Back";
-        }
-
-        function goBackOrLogout() {
-            if (isLoggedIn) {
-                alert("Logging out...");
-                showLoginState();
-            } else {
-                goBack();
-            }
-        }
-
-        // ========================================================
-        // LIVE FORM SUBMISSION HANDLERS (Connected to Flask API)
-        // ========================================================
-
-        // 1. Live Registration Handler
-        async function handleRegister(event) {
-            event.preventDefault();
-            
-            // Extract all form values
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            const dob = document.getElementById('dob').value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, dob, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert(`Registration Successful!\nWelcome aboard, ${name}.\n\n⚠️ IMPORTANT: Your User ID number is: ${data.user_id}\nUse this number to log in.`);
-                    event.target.reset();
-                    goBack();
-                } else {
-                    alert(`Registration Failed: ${data.error}`);
-                }
-            } catch (error) {
-                console.error("Connection Error:", error);
-                alert("Could not connect to the backend server. Verify your API server network deployment configuration.");
-            }
-        }
-
-        // 2. Live Login Authentication Handler
-        async function handlePortalLogin(event) {
-            event.preventDefault();
-            
-            const userNumber = document.getElementById('userNumber').value;
-            const password = document.getElementById('loginPassword').value; 
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userNumber, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert(`Logged in successfully!`);
-                    currentUserId = data.user_id; // Capture user ID for the file upload sequence
-                    event.target.reset();
-                    showUploadState();
-                } else {
-                    alert(`Login Failed: ${data.error}`);
-                }
-            } catch (error) {
-                console.error("Connection Error:", error);
-                alert("Network connectivity error during login confirmation.");
-            }
-        }
-        // 3. Updated Live File Upload Tracking Handler
-async function handleUpload(event) {
-    event.preventDefault();
-    const fileInput = document.getElementById('fileUpload');
-    const amountInput = document.getElementById('amount');
-    
-    if (fileInput.files.length === 0) {
-        alert("Please select a valid file to upload.");
-        return;
+    // ========================================================
+    // NAVIGATION & UI STATE
+    // ========================================================
+    function showRegister() {
+        welcomeCard.classList.add('hidden');
+        registerCard.classList.remove('hidden');
     }
 
-    if (!currentUserId) {
-        alert("Session context missing.");
-        showLoginState();
-        return;
+    function goBack() {
+        registerCard.classList.add('hidden');
+        uploadCard.classList.add('hidden');
+        dashboardCard.classList.add('hidden');
+        navBar.classList.add('hidden');
+        welcomeCard.classList.remove('hidden');
     }
 
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('user_id', currentUserId);
-    formData.append('total_amount', amountInput.value);
+    function showLoginState() {
+        isLoggedIn = false;
+        currentUserId = null;
+        welcomeCard.classList.add('hidden');
+        dashboardCard.classList.add('hidden');
+        navBar.classList.add('hidden');
+        uploadCard.classList.remove('hidden');
+        
+        portalTitle.innerText = "Portal Login";
+        portalInstructions.innerText = "Please enter your login details below.";
+        loginForm.classList.remove('hidden');
+        receiptUploadForm.classList.add('hidden');
+        backActionLink.innerText = "← Back to Welcome";
+    }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/upload`, {
-            method: 'POST',
-            body: formData 
+    function showUploadState() {
+        isLoggedIn = true;
+        portalTitle.innerText = "Receipt Dashboard";
+        portalInstructions.innerText = "Choose an image or PDF to upload your receipt.";
+        loginForm.classList.add('hidden');
+        dashboardCard.classList.add('hidden');
+        receiptUploadForm.classList.remove('hidden');
+        backActionLink.innerText = "← Logout & Go Back";
+    }
+
+    function goBackOrLogout() {
+        isLoggedIn ? showLoginState() : goBack();
+    }
+
+    // ========================================================
+    // API HANDLERS
+    // ========================================================
+    async function handleRegister(event) {
+        event.preventDefault();
+        const body = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            dob: document.getElementById('dob').value,
+            password: document.getElementById('password').value
+        };
+
+        const res = await fetch(`${API_BASE_URL}/api/register`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            alert(`Success! Points earned: ${data.points_earned}`);
-            event.target.reset();
-            
-            // --- ADD THIS LINE ---
-            loadDashboard(currentUserId); 
-            // ---------------------
-            
-        } else {
-            alert(`Upload Failed: ${data.error}`);
-        }
-    } catch (error) {
-        console.error("Connection Error:", error);
-        alert("Network connection error.");
+        const data = await res.json();
+        res.ok ? (alert(`Success! Your User ID: ${data.user_id}`), goBack(), event.target.reset()) : alert(data.error);
     }
-}
 
-  // ========================================================
-// DASHBOARD RENDERING LOGIC (UPDATED FOR DOWNLOADS)
-// ========================================================
-async function loadDashboard(userId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
-        const data = await response.json();
-
-        if (response.ok) {
-            const receiptList = document.getElementById('receiptList');
-            const totalPoints = document.getElementById('totalPoints');
-
-            receiptList.innerHTML = '';
-            
-            data.receipts.forEach(receipt => {
-                const listItem = document.createElement('li');
-                
-                // Create an anchor tag for downloading the file
-                const downloadLink = document.createElement('a');
-                downloadLink.href = `${API_BASE_URL}/api/download/${receipt.file_name}`;
-                downloadLink.textContent = `ID: ${receipt.id} | Amount: R${receipt.total_amount} | Pts: ${receipt.points_earned} [Download File]`;
-                downloadLink.target = "_blank"; // Opens in new tab
-                downloadLink.style.display = "block";
-                downloadLink.style.marginBottom = "8px";
-                downloadLink.style.color = "#004085";
-                downloadLink.style.textDecoration = "none";
-                downloadLink.style.fontWeight = "bold";
-
-                listItem.appendChild(downloadLink);
-                receiptList.appendChild(listItem);
-            });
-
-            totalPoints.textContent = data.total_points;
-            
-            // Ensure cards toggle correctly
-            uploadCard.classList.add('hidden');
-            document.getElementById('dashboardCard').classList.remove('hidden');
-        } else {
-            alert(`Failed to load dashboard: ${data.error}`);
-        }
-    } catch (error) {
-        console.error("Connection Error:", error);
-        alert("Network connection error while loading dashboard.");
-    }
-}
-// Show/Hide Profile Modal
-function showProfileModal() {
-    document.getElementById('profileModal').classList.remove('hidden');
-}
-
-function closeProfileModal() {
-    document.getElementById('profileModal').classList.add('hidden');
-}
-
-// Update Profile API Handler
-async function handleUpdateProfile(event) {
-    event.preventDefault();
-    const email = document.getElementById('editEmail').value;
-    const phone = document.getElementById('editPhone').value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: currentUserId, email, phone })
+    async function handlePortalLogin(event) {
+        event.preventDefault();
+        const res = await fetch(`${API_BASE_URL}/api/login`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })
         });
-
-        if (response.ok) {
-            alert("Profile updated successfully!");
-            closeProfileModal();
+        const data = await res.json();
+        if (res.ok) {
+            currentUserId = data.user_id;
+            loadDashboard(currentUserId);
         } else {
-            alert("Failed to update profile.");
+            alert("Login Failed: " + data.error);
         }
-    } catch (error) {
-        console.error("Error:", error);
     }
-}
 
-// Update your existing showUploadState to show the Nav
-function showUploadState() {
-    isLoggedIn = true;
-    document.getElementById('navBar').classList.remove('hidden'); // Show nav
-    // ... rest of your code
-}
-    </script>
+    async function handleUpload(event) {
+        event.preventDefault();
+        const formData = new FormData();
+        formData.append('file', document.getElementById('fileUpload').files[0]);
+        formData.append('user_id', currentUserId);
+        formData.append('total_amount', document.getElementById('amount').value);
+
+        const res = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        res.ok ? (alert("Success!"), loadDashboard(currentUserId)) : alert("Upload Failed");
+    }
+
+    async function loadDashboard(userId) {
+        const res = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
+        const data = await res.json();
+        if (res.ok) {
+            const list = document.getElementById('receiptList');
+            list.innerHTML = data.receipts.map(r => `<li><a href="${API_BASE_URL}/api/download/${r.file_name}" target="_blank">R${r.total_amount} - ${r.points_earned} pts</a></li>`).join('');
+            document.getElementById('totalPoints').textContent = data.total_points;
+            
+            uploadCard.classList.add('hidden');
+            dashboardCard.classList.remove('hidden');
+            navBar.classList.remove('hidden');
+        }
+    }
+
+    async function handleUpdateProfile(event) {
+        event.preventDefault();
+        await fetch(`${API_BASE_URL}/api/update-profile`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: currentUserId, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value })
+        });
+        alert("Profile updated!");
+        document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    function showProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+</script>
 </body>
 </html>
