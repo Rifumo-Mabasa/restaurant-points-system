@@ -141,15 +141,18 @@ def upload_file():
         
     file = request.files['file']
     user_id = request.form.get('user_id')
+    total_amount = float(request.form.get('total_amount', 0)) # Get amount from frontend
 
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
 
     if not user_id:
-        return jsonify({"error": "User ID is missing from upload request"}), 400
+        return jsonify({"error": "User ID is missing"}), 400
+
+    # Calculate points: 1 point per 100 Rand
+    points_earned = int(total_amount // 100)
 
     if file and allowed_file(file.filename):
-        # Extract file extension safely and secure the name string
         file_ext = file.filename.rsplit('.', 1)[1].lower()
         clean_name = secure_filename(file.filename.rsplit('.', 1)[0])
         filename = f"user_{user_id}_{clean_name}.{file_ext}"
@@ -163,24 +166,27 @@ def upload_file():
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Track file link path against user index
+            # 1. Track file
             cur.execute(
-                "INSERT INTO uploads (user_id, file_name) VALUES (%s, %s);",
-                (user_id, filename)
+                "INSERT INTO uploads (user_id, file_name, total_amount) VALUES (%s, %s, %s);",
+                (user_id, filename, total_amount)
+            )
+            # 2. Update user points (Ensure your DB has 'total_points' column)
+            cur.execute(
+                "UPDATE users SET total_points = total_points + %s WHERE id = %s;",
+                (points_earned, user_id)
             )
             conn.commit()
             
-            return jsonify({"message": "File uploaded and tracked successfully"}), 200
+            return jsonify({
+                "message": "File uploaded and tracked successfully",
+                "points_earned": points_earned
+            }), 200
         except Exception as e:
-            if conn:
-                conn.rollback()
+            if conn: conn.rollback()
             return jsonify({"error": str(e)}), 500
         finally:
             if cur: cur.close()
             if conn: conn.close()
 
-    return jsonify({"error": "File type not allowed. Please upload a PDF, PNG, JPG, or JPEG."}), 400
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return jsonify({"error": "File type not allowed."}), 400

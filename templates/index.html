@@ -155,7 +155,10 @@
                 <div class="form-group">
                     <label for="fileUpload">Select Receipt (Image or PDF)</label>
                     <input type="file" id="fileUpload" name="file" accept="image/*,.pdf" required>
+                    <label for="amount">Total Amount (Rand):</label>
+<input type="number" id="amount" name="amount" required>
                 </div>
+
                 <button type="submit" class="btn-secondary">Upload Receipt</button>
             </form>
             
@@ -301,47 +304,50 @@
                 alert("Network connectivity error during login confirmation.");
             }
         }
+// 3. Live File Upload Tracking Handler
+async function handleUpload(event) {
+    event.preventDefault();
+    const fileInput = document.getElementById('fileUpload');
+    const amountInput = document.getElementById('amount'); // Added this
+    
+    if (fileInput.files.length === 0) {
+        alert("Please select a valid file to upload.");
+        return;
+    }
 
-        // 3. Live File Upload Tracking Handler
-        async function handleUpload(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('fileUpload');
-            
-            if (fileInput.files.length === 0) {
-                alert("Please select a valid file to upload.");
-                return;
-            }
+    if (!currentUserId) {
+        alert("Session context missing. Please re-authenticate your user ID.");
+        showLoginState();
+        return;
+    }
 
-            if (!currentUserId) {
-                alert("Session context missing. Please re-authenticate your user ID.");
-                showLoginState();
-                return;
-            }
+    // Correctly packaged FormData
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('user_id', currentUserId);
+    formData.append('total_amount', amountInput.value); // Added this
 
-            // Multipart file uploads require standard FormData packaging instead of JSON strings
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('user_id', currentUserId);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/upload`, {
+            method: 'POST',
+            body: formData 
+        });
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/upload`, {
-                    method: 'POST',
-                    body: formData // Note: Browser handles headers automatically when parsing FormData
-                });
+        const data = await response.json();
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert(`Success! "${fileInput.files[0].name}" has been successfully uploaded and linked.`);
-                    event.target.reset();
-                } else {
-                    alert(`Upload Failed: ${data.error}`);
-                }
-            } catch (error) {
-                console.error("Connection Error:", error);
-                alert("Network connection drop timed out during file transfer submission.");
-            }
+        if (response.ok) {
+            alert(`Success! Receipt uploaded. Points earned: ${data.points_earned}`); // Updated to show points
+            event.target.reset();
+        } else {
+            alert(`Upload Failed: ${data.error}`);
         }
+    } catch (error) {
+        console.error("Connection Error:", error);
+        alert("Network connection drop during file transfer.");
+    }
+}
+       
+        
     </script>
 </body>
 </html>
