@@ -171,6 +171,25 @@
     <h3>Total Points Earned: <span id="totalPoints">0</span></h3>
     <button class="btn-secondary" onclick="showUploadState()">Upload More</button>
 </div>
+<div id="navBar" class="hidden" style="margin-bottom: 20px; text-align: right;">
+    <button onclick="showProfileModal()" style="width: auto; padding: 8px 16px;">Edit Profile</button>
+</div>
+
+<div id="profileModal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+    <h3>Edit Profile</h3>
+    <form onsubmit="handleUpdateProfile(event)">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="editEmail">
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="editPhone">
+        </div>
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <button type="button" onclick="closeProfileModal()" style="margin-top: 10px;">Cancel</button>
+    </form>
+</div>
     </main>
 
     <script>
@@ -402,6 +421,45 @@ async function loadDashboard(userId) {
         console.error("Connection Error:", error);
         alert("Network connection error while loading dashboard.");
     }
+}
+// Show/Hide Profile Modal
+function showProfileModal() {
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+// Update Profile API Handler
+async function handleUpdateProfile(event) {
+    event.preventDefault();
+    const email = document.getElementById('editEmail').value;
+    const phone = document.getElementById('editPhone').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUserId, email, phone })
+        });
+
+        if (response.ok) {
+            alert("Profile updated successfully!");
+            closeProfileModal();
+        } else {
+            alert("Failed to update profile.");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+
+// Update your existing showUploadState to show the Nav
+function showUploadState() {
+    isLoggedIn = true;
+    document.getElementById('navBar').classList.remove('hidden'); // Show nav
+    // ... rest of your code
 }
     </script>
 </body>

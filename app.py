@@ -39,73 +39,7 @@ def download_file(filename):
     except FileNotFoundError:
         abort(404)
 
-@app.route('/api/register', methods=['POST'])
-def register():
-    data = request.json or {}
-    name, email, phone, dob, password = data.get('name'), data.get('email'), data.get('phone'), data.get('dob'), data.get('password')
-    if not all([name, email, phone, dob, password]):
-        return jsonify({"error": "All fields are required"}), 400
-    
-    hashed_password = generate_password_hash(password)
-    conn = None
-    try:
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO users (name, email, phone, dob, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
-                (name, email, phone, dob, hashed_password)
-            )
-            user_id = cur.fetchone()[0]
-            conn.commit()
-            return jsonify({"message": "User registered successfully", "user_id": user_id}), 201
-    except Exception as e:
-        if conn: conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.json or {}
-    user_id_raw = data.get('userNumber') or data.get('userId')
-    try:
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, password_hash FROM users WHERE id = %s;", (int(user_id_raw),))
-            user = cur.fetchone()
-            if user and check_password_hash(user[1], data.get('password')):
-                return jsonify({"message": "Access granted", "user_id": user[0]}), 200
-        return jsonify({"error": "Invalid user number or password"}), 401
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    file = request.files.get('file')
-    user_id = request.form.get('user_id')
-    total_amount = float(request.form.get('total_amount', 0))
-    points_earned = int(total_amount // 100)
-    
-    if file and allowed_file(file.filename):
-        filename = f"user_{user_id}_{secure_filename(file.filename)}"
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        conn = None
-        try:
-            conn = get_db_connection()
-            with conn.cursor() as cur:
-                cur.execute("INSERT INTO uploads (user_id, file_name, total_amount, points_earned) VALUES (%s, %s, %s, %s);",
-                            (user_id, filename, total_amount, points_earned))
-                cur.execute("UPDATE users SET total_points = total_points + %s WHERE id = %s;", (points_earned, user_id))
-                conn.commit()
-                return jsonify({"message": "Success", "points_earned": points_earned}), 200
-        except Exception as e:
-            if conn: conn.rollback()
-            return jsonify({"error": str(e)}), 500
-        finally:
-            if conn: conn.close()
-    return jsonify({"error": "File type not allowed."}), 400
+# ... (Keep your existing /api/register, /api/login, /api/upload routes here) ...
 
 @app.route('/api/dashboard/<int:user_id>', methods=['GET'])
 def get_dashboard(user_id):
@@ -127,4 +61,28 @@ def get_dashboard(user_id):
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: conn.close()
-        
+
+# FIXED: Now correctly defined at the module level
+@app.route('/api/update-profile', methods=['POST'])
+def update_profile():
+    data = request.json
+    user_id = data.get('user_id')
+    email = data.get('email')
+    phone = data.get('phone')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET email = %s, phone = %s WHERE id = %s;", 
+                        (email, phone, user_id))
+            conn.commit()
+            return jsonify({"message": "Profile updated"}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+if __name__ == '__main__':
+    app.run(debug=True)
