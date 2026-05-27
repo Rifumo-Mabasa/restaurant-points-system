@@ -59,14 +59,27 @@ def register():
 def login():
     data = request.json or {}
     user_id_raw = data.get('userNumber')
+    password = data.get('password')
+    
+    if not user_id_raw or not password:
+        return jsonify({"error": "User ID and password are required"}), 400
+        
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, password_hash FROM users WHERE id = %s;", (int(user_id_raw),))
+            # Added "name" to the SELECT statement
+            cur.execute("SELECT id, password_hash, name FROM users WHERE id = %s;", (int(user_id_raw),))
             user = cur.fetchone()
-            if user and check_password_hash(user[1], data.get('password')):
-                return jsonify({"user_id": user[0]}), 200
+            
+            if user and check_password_hash(user[1], password):
+                # Return the user_id AND the name to the frontend
+                return jsonify({
+                    "user_id": user[0], 
+                    "name": user[2]
+                }), 200
         return jsonify({"error": "Invalid credentials"}), 401
+    except (ValueError, psycopg2.Error):
+        return jsonify({"error": "Invalid User ID format"}), 400
     finally:
         conn.close()
 

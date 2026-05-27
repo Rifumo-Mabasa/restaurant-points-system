@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Portal</title>
     <style>
-        body { font-family: sans-serif; background-color: #7c5e55; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        body { font-family: sans-serif; background-color: #7c5e55; background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: #fc8b8b; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .hidden { display: none !important; }
         .form-group { margin-bottom: 15px; }
         input { width: 100%; padding: 10px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; }
         .back-link { display: block; margin-top: 15px; cursor: pointer; text-decoration: underline; color: #004085; }
     </style>
 </head>
@@ -52,10 +53,11 @@
         </div>
 
         <div id="dashboardCard" class="card hidden">
-            <h2>Dashboard</h2>
+            <h2 id="welcomeBackMsg">Welcome back!</h2>
             <ul id="receiptList"></ul>
             <h3>Points: <span id="totalPoints">0</span></h3>
             <button onclick="showUploadState()">Upload More</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
             <div id="navBar">
                 <button onclick="showProfileModal()">Edit Profile</button>
             </div>
@@ -75,27 +77,39 @@
     <script>
         const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
         let currentUserId = null;
+        let currentUserName = "";
 
-        // UI State Transitions
         function showRegister() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('registerCard').classList.remove('hidden'); }
         function goBack() { document.querySelectorAll('.card').forEach(c => c.classList.add('hidden')); document.getElementById('welcomeCard').classList.remove('hidden'); }
         function showLoginState() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('loginForm').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.add('hidden'); }
         function showUploadState() { document.getElementById('loginForm').classList.add('hidden'); document.getElementById('dashboardCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.remove('hidden'); }
-        function goBackOrLogout() { currentUserId = null; goBack(); }
+        
+        function logout() {
+            currentUserId = null;
+            currentUserName = "";
+            alert("You have been logged out.");
+            goBack();
+        }
 
-        // API Methods
+        function goBackOrLogout() { currentUserId ? logout() : goBack(); }
+
         async function handleRegister(e) {
             e.preventDefault();
             const res = await fetch(`${API_BASE_URL}/api/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, dob: document.getElementById('dob').value, password: document.getElementById('password').value })});
             const data = await res.json();
-            res.ok ? (alert('User ID: ' + data.user_id), goBack()) : alert('Fail');
+            res.ok ? (alert('Registration Successful! User ID: ' + data.user_id), goBack()) : alert('Fail');
         }
 
         async function handlePortalLogin(e) {
             e.preventDefault();
             const res = await fetch(`${API_BASE_URL}/api/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })});
             const data = await res.json();
-            if (res.ok) { currentUserId = data.user_id; loadDashboard(currentUserId); } else alert('Login Failed');
+            if (res.ok) { 
+                currentUserId = data.user_id; 
+                currentUserName = data.name;
+                document.getElementById('welcomeBackMsg').innerText = `Welcome back, ${currentUserName}!`;
+                loadDashboard(currentUserId); 
+            } else alert('Login Failed');
         }
 
         async function handleUpload(e) {
