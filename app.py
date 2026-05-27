@@ -14,8 +14,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db_connection():
     db_url = os.environ.get("DATABASE_URL")
@@ -39,50 +38,81 @@ def download_file(filename):
     except FileNotFoundError:
         abort(404)
 
-# ... (Keep your existing /api/register, /api/login, /api/upload routes here) ...
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json or {}
+    name, email, phone, dob, password = data.get('name'), data.get('email'), data.get('phone'), data.get('dob'), data.get('password')
+    if not all([name, email, phone, dob, password]):
+        return jsonify({"error": "All fields are required"}), 400
+    hashed_password = generate_password_hash(password)
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO users (name, email, phone, dob, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id;", (name, email, phone, dob, hashed_password))
+            user_id = cur.fetchone()[0]
+            conn.commit()
+            return jsonify({"user_id": user_id}), 201
+    finally:
+        conn.close()
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json or {}
+    user_id_raw = data.get('userNumber')
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, password_hash FROM users WHERE id = %s;", (int(user_id_raw),))
+            user = cur.fetchone()
+            if user and check_password_hash(user[1], data.get('password')):
+                return jsonify({"user_id": user[0]}), 200
+        return jsonify({"error": "Invalid credentials"}), 401
+    finally:
+        conn.close()
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    file = request.files.get('file')
+    user_id = request.form.get('user_id')
+    amount = float(request.form.get('total_amount', 0))
+    if file and allowed_file(file.filename):
+        filename = f"user_{user_id}_{secure_filename(file.filename)}"
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("INSERT INTO uploads (user_id, file_name, total_amount, points_earned) VALUES (%s, %s, %s, %s);", (user_id, filename, amount, int(amount // 100)))
+                cur.execute("UPDATE users SET total_points = total_points + %s WHERE id = %s;", (int(amount // 100), user_id))
+                conn.commit()
+            return jsonify({"points_earned": int(amount // 100)}), 200
+        finally:
+            conn.close()
+    return jsonify({"error": "File invalid"}), 400
 
 @app.route('/api/dashboard/<int:user_id>', methods=['GET'])
 def get_dashboard(user_id):
-    conn = None
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT id, total_amount, points_earned, file_name FROM uploads WHERE user_id = %s;", (user_id,))
-            receipts = cur.fetchall()
+            receipts = [{"id": r[0], "total_amount": float(r[1]), "points_earned": r[2], "file_name": r[3]} for r in cur.fetchall()]
             cur.execute("SELECT total_points FROM users WHERE id = %s;", (user_id,))
-            res = cur.fetchone()
-            total_points = res[0] if res else 0
-            
-            return jsonify({
-                "receipts": [{"id": r[0], "total_amount": float(r[1]), "points_earned": r[2], "file_name": r[3]} for r in receipts],
-                "total_points": total_points
-            }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            total_points = cur.fetchone()[0]
+            return jsonify({"receipts": receipts, "total_points": total_points}), 200
     finally:
-        if conn: conn.close()
+        conn.close()
 
-# FIXED: Now correctly defined at the module level
 @app.route('/api/update-profile', methods=['POST'])
 def update_profile():
     data = request.json
-    user_id = data.get('user_id')
-    email = data.get('email')
-    phone = data.get('phone')
-    
-    conn = None
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET email = %s, phone = %s WHERE id = %s;", 
-                        (email, phone, user_id))
+            cur.execute("UPDATE users SET email = %s, phone = %s WHERE id = %s;", (data.get('email'), data.get('phone'), data.get('user_id')))
             conn.commit()
             return jsonify({"message": "Profile updated"}), 200
-    except Exception as e:
-        if conn: conn.rollback()
-        return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
