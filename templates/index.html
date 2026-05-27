@@ -358,37 +358,51 @@ async function handleUpload(event) {
     }
 }
 
-        // ========================================================
-        // DASHBOARD RENDERING LOGIC
-        // ========================================================
-        async function loadDashboard(userId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
-                const data = await response.json();
+  // ========================================================
+// DASHBOARD RENDERING LOGIC (UPDATED FOR DOWNLOADS)
+// ========================================================
+async function loadDashboard(userId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
+        const data = await response.json();
 
-                if (response.ok) {
-                    const receiptList = document.getElementById('receiptList');
-                    const totalPoints = document.getElementById('totalPoints');
+        if (response.ok) {
+            const receiptList = document.getElementById('receiptList');
+            const totalPoints = document.getElementById('totalPoints');
 
-                    receiptList.innerHTML = '';
-                    data.receipts.forEach(receipt => {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = `Receipt ID: ${receipt.id} | Amount: R${receipt.total_amount} | Points: ${receipt.points_earned}`;
-                        receiptList.appendChild(listItem);
-                    });
+            receiptList.innerHTML = '';
+            
+            data.receipts.forEach(receipt => {
+                const listItem = document.createElement('li');
+                
+                // Create an anchor tag for downloading the file
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `${API_BASE_URL}/api/download/${receipt.file_name}`;
+                downloadLink.textContent = `ID: ${receipt.id} | Amount: R${receipt.total_amount} | Pts: ${receipt.points_earned} [Download File]`;
+                downloadLink.target = "_blank"; // Opens in new tab
+                downloadLink.style.display = "block";
+                downloadLink.style.marginBottom = "8px";
+                downloadLink.style.color = "#004085";
+                downloadLink.style.textDecoration = "none";
+                downloadLink.style.fontWeight = "bold";
 
-                    totalPoints.textContent = data.total_points;
-                    uploadCard.classList.add('hidden');
-                    document.getElementById('dashboardCard').classList.remove('hidden');
-                } else {
-                    alert(`Failed to load dashboard: ${data.error}`);
-                }
-            } catch (error) {
-                console.error("Connection Error:", error);
-                alert("Network connection error while loading dashboard.");
-            }
+                listItem.appendChild(downloadLink);
+                receiptList.appendChild(listItem);
+            });
+
+            totalPoints.textContent = data.total_points;
+            
+            // Ensure cards toggle correctly
+            uploadCard.classList.add('hidden');
+            document.getElementById('dashboardCard').classList.remove('hidden');
+        } else {
+            alert(`Failed to load dashboard: ${data.error}`);
         }
-
+    } catch (error) {
+        console.error("Connection Error:", error);
+        alert("Network connection error while loading dashboard.");
+    }
+}
     </script>
 </body>
 </html>
