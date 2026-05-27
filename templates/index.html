@@ -3,333 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome Portal</title>
+    <title>Document Portal</title>
     <style>
-        /* Embedded CSS styling for immediate functionality */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #7c5e55;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-image: url("/static/first-image.png");
-            background-size: cover;
-            background-position: center;
-        }
-        main {
-            width: 100%;
-            max-width: 450px;
-            padding: 20px;
-        }
-        .title {
-            text-align: center;
-            color: #f0eaea;
-            margin-bottom: 24px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        .card {
-            background: #fc8b8b;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .hidden {
-            display: none !important;
-        }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-primary {
-            background-color: #004085;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #3af553;
-        }
-        .btn-secondary {
-            background-color: #004085;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #3af553;
-        }
-        .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #495057;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #0056b3;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: underline;
-        }
+        body { font-family: sans-serif; background-color: #7c5e55; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #fc8b8b; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        .form-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; }
+        .back-link { display: block; margin-top: 15px; cursor: pointer; text-decoration: underline; color: #004085; }
     </style>
 </head>
 <body>
 
     <main>
-        <h1 class="title">Welcome to the Document Portal</h1>
-
         <div id="welcomeCard" class="card">
-            <h2>Welcome!</h2>
-            <p>Please choose an option to continue to your dashboard.</p>
-            <div class="btn-group">
-                <button class="btn-primary" onclick="showRegister()">Register</button>
-                <button class="btn-secondary" onclick="showLoginState()">Login</button>
-            </div>
+            <h2>Welcome</h2>
+            <button onclick="showRegister()">Register</button>
+            <button onclick="showLoginState()">Login</button>
         </div>
 
         <div id="registerCard" class="card hidden">
-            <h2>Create Account</h2>
+            <h2>Register</h2>
             <form onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" name="name" required placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required placeholder="john@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" name="phone" required placeholder="123-456-7890">
-                </div>
-                <div class="form-group">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob" name="dob" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Create Password</label>
-                    <input type="password" id="password" name="password" required placeholder="••••••••">
-                </div>
-                <button type="submit" class="btn-primary">Submit Registration</button>
+                <input type="text" id="name" placeholder="Full Name" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="tel" id="phone" placeholder="Phone" required>
+                <input type="date" id="dob" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Submit</button>
             </form>
-            <span class="back-link" onclick="goBack()">← Back to Welcome</span>
+            <span class="back-link" onclick="goBack()">← Back</span>
         </div>
 
-    <div id="uploadCard" class="card hidden">
-    <h2 id="portalTitle">Portal Login</h2>
-    <p id="portalInstructions">Please enter your login details below.</p>
-    
-    <form id="loginForm" onsubmit="handlePortalLogin(event)">
-        <div class="form-group">
-            <label for="userNumber">User Number</label>
-            <input type="text" id="userNumber" name="userNumber" required>
+        <div id="uploadCard" class="card hidden">
+            <h2 id="portalTitle">Login</h2>
+            <form id="loginForm" onsubmit="handlePortalLogin(event)">
+                <input type="text" id="userNumber" placeholder="User ID" required>
+                <input type="password" id="loginPassword" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <form id="receiptUploadForm" class="hidden" onsubmit="handleUpload(event)">
+                <input type="file" id="fileUpload" required>
+                <input type="number" id="amount" placeholder="Total Amount" required>
+                <button type="submit">Upload Receipt</button>
+            </form>
+            <span id="backActionLink" class="back-link" onclick="goBackOrLogout()">← Back</span>
         </div>
-        <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" name="password" required>
-        </div>
-        <button type="submit" class="btn-primary">Login</button>
-    </form>
 
-    <form id="receiptUploadForm" class="hidden" onsubmit="handleUpload(event)">
-        <div class="form-group">
-            <label for="fileUpload">Select Receipt (Image or PDF)</label>
-            <input type="file" id="fileUpload" name="file" accept="image/*,.pdf" required>
-            <label for="amount">Total Amount (Rand):</label>
-            <input type="number" id="amount" name="amount" required>
+        <div id="dashboardCard" class="card hidden">
+            <h2>Dashboard</h2>
+            <ul id="receiptList"></ul>
+            <h3>Points: <span id="totalPoints">0</span></h3>
+            <button onclick="showUploadState()">Upload More</button>
+            <div id="navBar">
+                <button onclick="showProfileModal()">Edit Profile</button>
+            </div>
         </div>
-        <button type="submit" class="btn-secondary">Upload Receipt</button>
-    </form>
-    
-    <span id="backActionLink" class="back-link" onclick="goBackOrLogout()">← Back to Welcome</span>
-</div>
 
-<div id="dashboardCard" class="card hidden">
-    <h2>Your Dashboard</h2>
-    <ul id="receiptList"></ul>
-    <hr>
-    <h3>Total Points Earned: <span id="totalPoints">0</span></h3>
-    <button class="btn-secondary" onclick="showUploadState()">Upload More</button>
-</div>
-<div id="navBar" class="hidden" style="margin-bottom: 20px; text-align: right;">
-    <button onclick="showProfileModal()" style="width: auto; padding: 8px 16px;">Edit Profile</button>
-</div>
-
-<div id="profileModal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
-    <h3>Edit Profile</h3>
-    <form onsubmit="handleUpdateProfile(event)">
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="editEmail">
+        <div id="profileModal" class="card hidden" style="position:fixed; top:20%;">
+            <h3>Edit Profile</h3>
+            <form onsubmit="handleUpdateProfile(event)">
+                <input type="email" id="editEmail" placeholder="New Email">
+                <input type="tel" id="editPhone" placeholder="New Phone">
+                <button type="submit">Save</button>
+                <button type="button" onclick="closeProfileModal()">Cancel</button>
+            </form>
         </div>
-        <div class="form-group">
-            <label>Phone</label>
-            <input type="tel" id="editPhone">
-        </div>
-        <button type="submit" class="btn-primary">Save Changes</button>
-        <button type="button" onclick="closeProfileModal()" style="margin-top: 10px;">Cancel</button>
-    </form>
-</div>
     </main>
 
- <script>
-    // ========================================================
-    // CONFIGURATION
-    // ========================================================
-    const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
-    let isLoggedIn = false;
-    let currentUserId = null;
+    <script>
+        const API_BASE_URL = 'https://receipt-portal-backend.onrender.com';
+        let currentUserId = null;
 
-    // Elements mapping
-    const welcomeCard = document.getElementById('welcomeCard');
-    const registerCard = document.getElementById('registerCard');
-    const uploadCard = document.getElementById('uploadCard');
-    const dashboardCard = document.getElementById('dashboardCard');
-    const navBar = document.getElementById('navBar');
-    const loginForm = document.getElementById('loginForm');
-    const receiptUploadForm = document.getElementById('receiptUploadForm');
-    const portalTitle = document.getElementById('portalTitle');
-    const portalInstructions = document.getElementById('portalInstructions');
-    const backActionLink = document.getElementById('backActionLink');
+        // UI State Transitions
+        function showRegister() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('registerCard').classList.remove('hidden'); }
+        function goBack() { document.querySelectorAll('.card').forEach(c => c.classList.add('hidden')); document.getElementById('welcomeCard').classList.remove('hidden'); }
+        function showLoginState() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('loginForm').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.add('hidden'); }
+        function showUploadState() { document.getElementById('loginForm').classList.add('hidden'); document.getElementById('dashboardCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.remove('hidden'); }
+        function goBackOrLogout() { currentUserId = null; goBack(); }
 
-    // ========================================================
-    // NAVIGATION & UI STATE
-    // ========================================================
-    function showRegister() {
-        welcomeCard.classList.add('hidden');
-        registerCard.classList.remove('hidden');
-    }
-
-    function goBack() {
-        registerCard.classList.add('hidden');
-        uploadCard.classList.add('hidden');
-        dashboardCard.classList.add('hidden');
-        navBar.classList.add('hidden');
-        welcomeCard.classList.remove('hidden');
-    }
-
-    function showLoginState() {
-        isLoggedIn = false;
-        currentUserId = null;
-        welcomeCard.classList.add('hidden');
-        dashboardCard.classList.add('hidden');
-        navBar.classList.add('hidden');
-        uploadCard.classList.remove('hidden');
-        
-        portalTitle.innerText = "Portal Login";
-        portalInstructions.innerText = "Please enter your login details below.";
-        loginForm.classList.remove('hidden');
-        receiptUploadForm.classList.add('hidden');
-        backActionLink.innerText = "← Back to Welcome";
-    }
-
-    function showUploadState() {
-        isLoggedIn = true;
-        portalTitle.innerText = "Receipt Dashboard";
-        portalInstructions.innerText = "Choose an image or PDF to upload your receipt.";
-        loginForm.classList.add('hidden');
-        dashboardCard.classList.add('hidden');
-        receiptUploadForm.classList.remove('hidden');
-        backActionLink.innerText = "← Logout & Go Back";
-    }
-
-    function goBackOrLogout() {
-        isLoggedIn ? showLoginState() : goBack();
-    }
-
-    // ========================================================
-    // API HANDLERS
-    // ========================================================
-    async function handleRegister(event) {
-        event.preventDefault();
-        const body = {
-            name: document.getElementById('name').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value,
-            dob: document.getElementById('dob').value,
-            password: document.getElementById('password').value
-        };
-
-        const res = await fetch(`${API_BASE_URL}/api/register`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        res.ok ? (alert(`Success! Your User ID: ${data.user_id}`), goBack(), event.target.reset()) : alert(data.error);
-    }
-
-    async function handlePortalLogin(event) {
-        event.preventDefault();
-        const res = await fetch(`${API_BASE_URL}/api/login`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            currentUserId = data.user_id;
-            loadDashboard(currentUserId);
-        } else {
-            alert("Login Failed: " + data.error);
+        // API Methods
+        async function handleRegister(e) {
+            e.preventDefault();
+            const res = await fetch(`${API_BASE_URL}/api/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, dob: document.getElementById('dob').value, password: document.getElementById('password').value })});
+            const data = await res.json();
+            res.ok ? (alert('User ID: ' + data.user_id), goBack()) : alert('Fail');
         }
-    }
 
-    async function handleUpload(event) {
-        event.preventDefault();
-        const formData = new FormData();
-        formData.append('file', document.getElementById('fileUpload').files[0]);
-        formData.append('user_id', currentUserId);
-        formData.append('total_amount', document.getElementById('amount').value);
-
-        const res = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
-        const data = await res.json();
-        res.ok ? (alert("Success!"), loadDashboard(currentUserId)) : alert("Upload Failed");
-    }
-
-    async function loadDashboard(userId) {
-        const res = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
-        const data = await res.json();
-        if (res.ok) {
-            const list = document.getElementById('receiptList');
-            list.innerHTML = data.receipts.map(r => `<li><a href="${API_BASE_URL}/api/download/${r.file_name}" target="_blank">R${r.total_amount} - ${r.points_earned} pts</a></li>`).join('');
-            document.getElementById('totalPoints').textContent = data.total_points;
-            
-            uploadCard.classList.add('hidden');
-            dashboardCard.classList.remove('hidden');
-            navBar.classList.remove('hidden');
+        async function handlePortalLogin(e) {
+            e.preventDefault();
+            const res = await fetch(`${API_BASE_URL}/api/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })});
+            const data = await res.json();
+            if (res.ok) { currentUserId = data.user_id; loadDashboard(currentUserId); } else alert('Login Failed');
         }
-    }
 
-    async function handleUpdateProfile(event) {
-        event.preventDefault();
-        await fetch(`${API_BASE_URL}/api/update-profile`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: currentUserId, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value })
-        });
-        alert("Profile updated!");
-        document.getElementById('profileModal').classList.add('hidden');
-    }
+        async function handleUpload(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('fileUpload').files[0]);
+            formData.append('user_id', currentUserId);
+            formData.append('total_amount', document.getElementById('amount').value);
+            const res = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
+            res.ok ? (alert('Success'), loadDashboard(currentUserId)) : alert('Upload Failed');
+        }
 
-    function showProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-</script>
+        async function loadDashboard(uid) {
+            const res = await fetch(`${API_BASE_URL}/api/dashboard/${uid}`);
+            const data = await res.json();
+            if(res.ok) {
+                const list = document.getElementById('receiptList');
+                list.innerHTML = data.receipts.map(r => `<li><a href="${API_BASE_URL}/api/download/${r.file_name}" target="_blank">R${r.total_amount} - ${r.points_earned} pts</a></li>`).join('');
+                document.getElementById('totalPoints').innerText = data.total_points;
+                document.getElementById('uploadCard').classList.add('hidden');
+                document.getElementById('dashboardCard').classList.remove('hidden');
+            }
+        }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            await fetch(`${API_BASE_URL}/api/update-profile`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: currentUserId, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value })});
+            closeProfileModal(); alert('Updated');
+        }
+
+        function showProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+        function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+    </script>
 </body>
 </html>
