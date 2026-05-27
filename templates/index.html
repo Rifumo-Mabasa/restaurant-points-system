@@ -135,35 +135,42 @@
             <span class="back-link" onclick="goBack()">← Back to Welcome</span>
         </div>
 
-        <div id="uploadCard" class="card hidden">
-            <h2 id="portalTitle">Portal Login</h2>
-            <p id="portalInstructions">Please enter your login details below to access your receipts.</p>
-            
-            <form id="loginForm" onsubmit="handlePortalLogin(event)">
-                <div class="form-group">
-                    <label for="userNumber">User Number</label>
-                    <input type="text" id="userNumber" name="userNumber" required placeholder="e.g., 123456">
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" name="password" placeholder="Enter password" required />
-                </div>
-                <button type="submit" class="btn-primary">Login</button>
-            </form>
-
-            <form id="receiptUploadForm" class="hidden" onsubmit="handleUpload(event)">
-                <div class="form-group">
-                    <label for="fileUpload">Select Receipt (Image or PDF)</label>
-                    <input type="file" id="fileUpload" name="file" accept="image/*,.pdf" required>
-                    <label for="amount">Total Amount (Rand):</label>
-<input type="number" id="amount" name="amount" required>
-                </div>
-
-                <button type="submit" class="btn-secondary">Upload Receipt</button>
-            </form>
-            
-            <span id="backActionLink" class="back-link" onclick="goBackOrLogout()">← Back to Welcome</span>
+    <div id="uploadCard" class="card hidden">
+    <h2 id="portalTitle">Portal Login</h2>
+    <p id="portalInstructions">Please enter your login details below.</p>
+    
+    <form id="loginForm" onsubmit="handlePortalLogin(event)">
+        <div class="form-group">
+            <label for="userNumber">User Number</label>
+            <input type="text" id="userNumber" name="userNumber" required>
         </div>
+        <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" name="password" required>
+        </div>
+        <button type="submit" class="btn-primary">Login</button>
+    </form>
+
+    <form id="receiptUploadForm" class="hidden" onsubmit="handleUpload(event)">
+        <div class="form-group">
+            <label for="fileUpload">Select Receipt (Image or PDF)</label>
+            <input type="file" id="fileUpload" name="file" accept="image/*,.pdf" required>
+            <label for="amount">Total Amount (Rand):</label>
+            <input type="number" id="amount" name="amount" required>
+        </div>
+        <button type="submit" class="btn-secondary">Upload Receipt</button>
+    </form>
+    
+    <span id="backActionLink" class="back-link" onclick="goBackOrLogout()">← Back to Welcome</span>
+</div>
+
+<div id="dashboardCard" class="card hidden">
+    <h2>Your Dashboard</h2>
+    <ul id="receiptList"></ul>
+    <hr>
+    <h3>Total Points Earned: <span id="totalPoints">0</span></h3>
+    <button class="btn-secondary" onclick="showUploadState()">Upload More</button>
+</div>
     </main>
 
     <script>
@@ -304,11 +311,11 @@
                 alert("Network connectivity error during login confirmation.");
             }
         }
-// 3. Live File Upload Tracking Handler
+        // 3. Updated Live File Upload Tracking Handler
 async function handleUpload(event) {
     event.preventDefault();
     const fileInput = document.getElementById('fileUpload');
-    const amountInput = document.getElementById('amount'); // Added this
+    const amountInput = document.getElementById('amount');
     
     if (fileInput.files.length === 0) {
         alert("Please select a valid file to upload.");
@@ -316,16 +323,15 @@ async function handleUpload(event) {
     }
 
     if (!currentUserId) {
-        alert("Session context missing. Please re-authenticate your user ID.");
+        alert("Session context missing.");
         showLoginState();
         return;
     }
 
-    // Correctly packaged FormData
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     formData.append('user_id', currentUserId);
-    formData.append('total_amount', amountInput.value); // Added this
+    formData.append('total_amount', amountInput.value);
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/upload`, {
@@ -336,18 +342,53 @@ async function handleUpload(event) {
         const data = await response.json();
 
         if (response.ok) {
-            alert(`Success! Receipt uploaded. Points earned: ${data.points_earned}`); // Updated to show points
+            alert(`Success! Points earned: ${data.points_earned}`);
             event.target.reset();
+            
+            // --- ADD THIS LINE ---
+            loadDashboard(currentUserId); 
+            // ---------------------
+            
         } else {
             alert(`Upload Failed: ${data.error}`);
         }
     } catch (error) {
         console.error("Connection Error:", error);
-        alert("Network connection drop during file transfer.");
+        alert("Network connection error.");
     }
 }
-       
-        
+
+        // ========================================================
+        // DASHBOARD RENDERING LOGIC
+        // ========================================================
+        async function loadDashboard(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/dashboard/${userId}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const receiptList = document.getElementById('receiptList');
+                    const totalPoints = document.getElementById('totalPoints');
+
+                    receiptList.innerHTML = '';
+                    data.receipts.forEach(receipt => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = `Receipt ID: ${receipt.id} | Amount: R${receipt.total_amount} | Points: ${receipt.points_earned}`;
+                        receiptList.appendChild(listItem);
+                    });
+
+                    totalPoints.textContent = data.total_points;
+                    uploadCard.classList.add('hidden');
+                    document.getElementById('dashboardCard').classList.remove('hidden');
+                } else {
+                    alert(`Failed to load dashboard: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Connection Error:", error);
+                alert("Network connection error while loading dashboard.");
+            }
+        }
+
     </script>
 </body>
 </html>

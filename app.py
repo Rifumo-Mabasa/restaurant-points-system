@@ -190,3 +190,28 @@ def upload_file():
             if conn: conn.close()
 
     return jsonify({"error": "File type not allowed."}), 400
+@app.route('/api/dashboard/<int:user_id>', methods=['GET'])
+def get_dashboard(user_id):
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Fetch all receipts
+        cur.execute("SELECT file_name, total_amount FROM uploads WHERE user_id = %s;", (user_id,))
+        receipts = cur.fetchall()
+        
+        # Fetch total points from the users table
+        cur.execute("SELECT total_points FROM users WHERE id = %s;", (user_id,))
+        total_points = cur.fetchone()[0]
+        
+        return jsonify({
+            "receipts": [{"file": r[0], "amount": float(r[1])} for r in receipts],
+            "total_points": total_points
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
