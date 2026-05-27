@@ -48,7 +48,7 @@ def register():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO users (name, email, phone, dob, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id;", (name, email, phone, dob, hashed_password))
+            cur.execute("INSERT INTO users (name, email, phone, dob, password_hash, total_points) VALUES (%s, %s, %s, %s, %s, 0) RETURNING id;", (name, email, phone, dob, hashed_password))
             user_id = cur.fetchone()[0]
             conn.commit()
             return jsonify({"user_id": user_id}), 201
@@ -67,16 +67,11 @@ def login():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            # Added "name" to the SELECT statement
             cur.execute("SELECT id, password_hash, name FROM users WHERE id = %s;", (int(user_id_raw),))
             user = cur.fetchone()
             
             if user and check_password_hash(user[1], password):
-                # Return the user_id AND the name to the frontend
-                return jsonify({
-                    "user_id": user[0], 
-                    "name": user[2]
-                }), 200
+                return jsonify({"user_id": user[0], "name": user[2]}), 200
         return jsonify({"error": "Invalid credentials"}), 401
     except (ValueError, psycopg2.Error):
         return jsonify({"error": "Invalid User ID format"}), 400
@@ -85,43 +80,61 @@ def login():
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    file = request.files.get('file')
+    if 'file' not in request.files: return jsonify({"error": "No file"}), 400
+    file = request.files['file']
     user_id = request.form.get('user_id')
     amount = float(request.form.get('total_amount', 0))
+    
     if file and allowed_file(file.filename):
         filename = f"user_{user_id}_{secure_filename(file.filename)}"
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
         conn = get_db_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("INSERT INTO uploads (user_id, file_name, total_amount, points_earned) VALUES (%s, %s, %s, %s);", (user_id, filename, amount, int(amount // 100)))
-                cur.execute("UPDATE users SET total_points = total_points + %s WHERE id = %s;", (int(amount // 100), user_id))
+                # Insert record with current timestamp
+                cur.execute("INSERT INTO uploads (user_id, file_name, total_amount, points_earned, created_at) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP);", 
+                            (user_id, filename, amount, int(amount // 100)))
+                # Update user points safely
+                cur.execute("UPDATE users SET total_points = COALESCE(total_points, 0) + %s WHERE id = %s;", 
+                            (int(amount // 100), user_id))
                 conn.commit()
             return jsonify({"points_earned": int(amount // 100)}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
         finally:
             conn.close()
-    return jsonify({"error": "File invalid"}), 400
+    return jsonify({"error": "File type not allowed"}), 400
 
 @app.route('/api/dashboard/<int:user_id>', methods=['GET'])
 def get_dashboard(user_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, total_amount, points_earned, file_name FROM uploads WHERE user_id = %s;", (user_id,))
-            receipts = [{"id": r[0], "total_amount": float(r[1]), "points_earned": r[2], "file_name": r[3]} for r in cur.fetchall()]
-            cur.execute("SELECT total_points FROM users WHERE id = %s;", (user_id,))
-            total_points = cur.fetchone()[0]
+            # Select receipts with date
+            cur.execute("SELECT total_amount, points_earned, file_name, created_at FROM uploads WHERE user_id = %s ORDER BY created_at DESC;", (user_id,))
+            receipts = [{
+                "total_amount": float(r[0]), 
+                "points_earned": r[1], 
+                "file_name": r[2], 
+                "date": r[3].strftime('%Y-%m-%d') if r[3] else 'N/A'
+            } for r in cur.fetchall()]
+            
+            cur.execute("SELECT COALESCE(total_points, 0) FROM users WHERE id = %s;", (user_id,))
+            total = cur.fetchone()
+            total_points = total[0] if total else 0
             return jsonify({"receipts": receipts, "total_points": total_points}), 200
     finally:
         conn.close()
 
 @app.route('/api/update-profile', methods=['POST'])
 def update_profile():
-    data = request.json
+    data = request.json or {}
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET email = %s, phone = %s WHERE id = %s;", (data.get('email'), data.get('phone'), data.get('user_id')))
+            cur.execute("UPDATE users SET email = %s, phone = %s WHERE id = %s;", 
+                        (data.get('email'), data.get('phone'), data.get('user_id')))
             conn.commit()
             return jsonify({"message": "Profile updated"}), 200
     finally:

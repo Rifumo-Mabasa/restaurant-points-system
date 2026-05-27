@@ -5,21 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Portal</title>
     <style>
-        body { font-family: sans-serif; background-color: #7c5e55; background-size: cover;background-image: url('static/first-image.png');background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #fc8b8b; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+   body { 
+    font-family: sans-serif; 
+    margin: 0; 
+    min-height: 100vh; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    
+    /* This creates a semi-transparent dark overlay to make the image appear more 'opaque' */
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                url('/static/first-image.png');
+    
+    background-size: cover; 
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+        .card { 
+            background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 30px; 
+            border-radius: 16px; 
+            width: 400px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            color: black;
+        }
+
         .hidden { display: none !important; }
-        .form-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; }
-        .logout-btn { background-color: #d9534f; color: white; border: none; }
-        .back-link { display: block; margin-top: 15px; cursor: pointer; text-decoration: underline; color: #004085; }
+
+        input { 
+            width: 100%; padding: 12px; margin-bottom: 12px; box-sizing: border-box; 
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px; color: black;
+        }
+
+        input::placeholder { color: black; }
+
+        button { 
+            width: 100%; padding: 12px; margin-top: 5px; cursor: pointer; 
+            background: rgba(255, 255, 255, 0.2); border: none; border-radius: 8px;
+            color: black; font-weight: bold; transition: 0.3s;
+        }
+
+        button:hover { background: rgba(105, 243, 105, 0.3); }
+
+        .logout-btn { background-color: rgba(217, 83, 79, 0.8); }
+        .logout-btn:hover { background-color: rgba(217, 83, 79, 1); }
+
+        .back-link { 
+            display: block; margin-top: 15px; cursor: pointer; text-decoration: underline; 
+            color: black; font-size: 0.9em;
+        }
+
+        ul { list-style: none; padding: 0; }
+        li { background: rgba(0,0,0,0.1); margin-bottom: 5px; padding: 10px; border-radius: 5px; }
+        a { color: black; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <main>
         <div id="welcomeCard" class="card">
-            <h2>Welcome</h2>
+            <h2>Welcome to our points system Portal:</h2>
             <button onclick="showRegister()">Register</button>
             <button onclick="showLoginState()">Login</button>
         </div>
@@ -79,65 +129,73 @@
         let currentUserId = null;
         let currentUserName = "";
 
+        async function safeFetch(url, options) {
+            try {
+                const res = await fetch(url, options);
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.message || 'Request failed');
+                return data;
+            } catch (err) { alert(err.message); throw err; }
+        }
+
         function showRegister() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('registerCard').classList.remove('hidden'); }
         function goBack() { document.querySelectorAll('.card').forEach(c => c.classList.add('hidden')); document.getElementById('welcomeCard').classList.remove('hidden'); }
         function showLoginState() { document.getElementById('welcomeCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('loginForm').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.add('hidden'); }
         function showUploadState() { document.getElementById('loginForm').classList.add('hidden'); document.getElementById('dashboardCard').classList.add('hidden'); document.getElementById('uploadCard').classList.remove('hidden'); document.getElementById('receiptUploadForm').classList.remove('hidden'); }
         
-        function logout() {
-            currentUserId = null;
-            currentUserName = "";
-            alert("You have been logged out.");
-            goBack();
+        function logout() { 
+            currentUserId = null; currentUserName = ""; 
+            document.getElementById('receiptUploadForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            goBack(); 
         }
-
         function goBackOrLogout() { currentUserId ? logout() : goBack(); }
 
         async function handleRegister(e) {
             e.preventDefault();
-            const res = await fetch(`${API_BASE_URL}/api/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, dob: document.getElementById('dob').value, password: document.getElementById('password').value })});
-            const data = await res.json();
-            res.ok ? (alert('Registration Successful! User ID: ' + data.user_id), goBack()) : alert('Fail');
+            await safeFetch(`${API_BASE_URL}/api/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, dob: document.getElementById('dob').value, password: document.getElementById('password').value })});
+            alert('Registration Successful!'); goBack();
         }
 
         async function handlePortalLogin(e) {
             e.preventDefault();
-            const res = await fetch(`${API_BASE_URL}/api/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })});
-            const data = await res.json();
-            if (res.ok) { 
-                currentUserId = data.user_id; 
-                currentUserName = data.name;
-                document.getElementById('welcomeBackMsg').innerText = `Welcome back, ${currentUserName}!`;
-                loadDashboard(currentUserId); 
-            } else alert('Login Failed');
+            const data = await safeFetch(`${API_BASE_URL}/api/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userNumber: document.getElementById('userNumber').value, password: document.getElementById('loginPassword').value })});
+            currentUserId = data.user_id; currentUserName = data.name;
+            document.getElementById('welcomeBackMsg').innerText = `Welcome back, ${currentUserName}!`;
+            await loadDashboard(currentUserId);
         }
 
         async function handleUpload(e) {
             e.preventDefault();
+            const fileInput = document.getElementById('fileUpload');
+            if (!fileInput.files[0]) return alert('Please select a file.');
             const formData = new FormData();
-            formData.append('file', document.getElementById('fileUpload').files[0]);
+            formData.append('file', fileInput.files[0]);
             formData.append('user_id', currentUserId);
             formData.append('total_amount', document.getElementById('amount').value);
-            const res = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
-            res.ok ? (alert('Success'), loadDashboard(currentUserId)) : alert('Upload Failed');
+            
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Uploading..."; btn.disabled = true;
+            try {
+                await safeFetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
+                alert('Success'); document.getElementById('receiptUploadForm').reset();
+                await loadDashboard(currentUserId);
+            } finally { btn.innerText = "Upload Receipt"; btn.disabled = false; }
         }
 
         async function loadDashboard(uid) {
-            const res = await fetch(`${API_BASE_URL}/api/dashboard/${uid}`);
-            const data = await res.json();
-            if(res.ok) {
-                const list = document.getElementById('receiptList');
-                list.innerHTML = data.receipts.map(r => `<li><a href="${API_BASE_URL}/api/download/${r.file_name}" target="_blank">R${r.total_amount} - ${r.points_earned} pts</a></li>`).join('');
-                document.getElementById('totalPoints').innerText = data.total_points;
-                document.getElementById('uploadCard').classList.add('hidden');
-                document.getElementById('dashboardCard').classList.remove('hidden');
-            }
+            const data = await safeFetch(`${API_BASE_URL}/api/dashboard/${uid}`);
+            const list = document.getElementById('receiptList');
+            list.innerHTML = data.receipts.map(r => `<li><a href="${API_BASE_URL}/api/download/${r.file_name}" target="_blank">${r.date || 'N/A'} - R${r.total_amount} - ${r.points_earned} pts</a></li>`).join('');
+            document.getElementById('totalPoints').innerText = data.total_points;
+            document.getElementById('uploadCard').classList.add('hidden');
+            document.getElementById('dashboardCard').classList.remove('hidden');
         }
 
         async function handleUpdateProfile(e) {
             e.preventDefault();
-            await fetch(`${API_BASE_URL}/api/update-profile`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: currentUserId, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value })});
-            closeProfileModal(); alert('Updated');
+            await safeFetch(`${API_BASE_URL}/api/update-profile`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: currentUserId, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value })});
+            closeProfileModal(); alert('Updated'); await loadDashboard(currentUserId);
         }
 
         function showProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
